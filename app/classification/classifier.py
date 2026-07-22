@@ -11,8 +11,7 @@ class QuestionClassifier:
 
         for question in questions:
 
-            result = self.matcher.match(
-                question.question_text,
+            result = self.matcher.classify(                question.question_text,
                 syllabus
             )
 

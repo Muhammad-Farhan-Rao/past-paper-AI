@@ -1,9 +1,9 @@
-from app.classification.models import ClassificationResult
+from app.classification.base_classifier import BaseClassifier
 
 
-class KeywordMatcher:
+class KeywordMatcher(BaseClassifier):
 
-    def match(self, question_text: str, syllabus: dict) -> ClassificationResult:
+    def match(self, question_text: str, syllabus: dict) -> BaseClassifier:
 
         question = question_text.lower()
 
@@ -27,7 +27,7 @@ class KeywordMatcher:
 
         confidence = min(best_score / 3, 1.0)
 
-        return ClassificationResult(
+        return BaseClassifier(
             chapter=best_chapter,
             topic=best_topic,
             confidence=confidence
