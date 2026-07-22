@@ -5,25 +5,16 @@ from app.segmentation.question_segmenter import QuestionSegmenter
 reader = PDFReader()
 
 pages = reader.read(
-    RAW_DATA_DIR /
-    "Math_2024_Annual.pdf"
+    RAW_DATA_DIR / "Math_2024_Annual_Text.pdf"
 )
-
-print("=" * 80)
-print(pages[0].text[:3000])
-print("=" * 80)
 
 segmenter = QuestionSegmenter()
 
-questions = segmenter.segment(
-    pages,
-    year=2024,
-    exam_type="Annual"
-)
+questions = segmenter.segment(pages)
 
-print(len(questions))
+print(f"Questions Extracted: {len(questions)}")
+print("=" * 80)
 
-for question in questions[:5]:
-    print("-" * 80)
-    print(question.question_number)
-    print(question.question_text[:500])
+for q in questions[:5]:
+    print(q)
+    print()

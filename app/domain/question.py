@@ -1,34 +1,36 @@
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
 class Question:
     id: str
+
     board: str
-    class_name: str
+    student_class: str
     subject: str
     year: int
     exam_type: str
 
     section: str
 
-    question_number: str
-    sub_question_number: str | None
+    question_number: int
+    sub_question_number: Optional[str]
 
     question_text: str
 
-    marks: int | None
+    marks: Optional[int]
 
     question_type: str
 
-    chapter: str | None
-    topic: str | None
-    subtopic: str | None
+    chapter: Optional[str]
+    topic: Optional[str]
+    subtopic: Optional[str]
 
-    source_file: str
     page_number: int
+    source_file: str
 
     extraction_confidence: float
     classification_confidence: float
 
-    review_status: str
+    review_status: str = "pending"

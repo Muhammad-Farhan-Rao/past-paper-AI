@@ -7,30 +7,18 @@ from app.domain.question import Question
 
 class QuestionExporter:
 
-    def export(
-            self,
-            questions: list[Question],
-            output_file: Path
-    ):
+    def export_json(self, questions: list[Question], output_path: Path):
 
-        output_file.parent.mkdir(
-            parents=True,
-            exist_ok=True
-        )
+        data = [asdict(question) for question in questions]
 
-        with open(
-                output_file,
-                "w",
-                encoding="utf-8"
-        ) as file:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
+        with open(output_path, "w", encoding="utf-8") as file:
             json.dump(
-                [asdict(question)
-                 for question in questions],
-
+                data,
                 file,
-
                 indent=4,
-
                 ensure_ascii=False
             )
+
+        print(f"Saved {len(questions)} questions to {output_path}")
