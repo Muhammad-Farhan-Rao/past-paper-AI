@@ -1,6 +1,7 @@
 import json
 from dataclasses import asdict
 from pathlib import Path
+from app.utils.logger import logger
 
 from app.domain.question import Question
 
@@ -21,4 +22,4 @@ class QuestionExporter:
                 ensure_ascii=False
             )
 
-        print(f"Saved {len(questions)} questions to {output_path}")
+        logger.info(f"Saved {len(questions)} questions to {output_path}")

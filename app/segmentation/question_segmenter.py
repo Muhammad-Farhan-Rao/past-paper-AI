@@ -2,15 +2,16 @@ import re
 from typing import List
 from app.utils.id_generator import IdGenerator
 from app.domain.question import Question
-
+from app.metadata.filename_parser import FilenameParser
 from app.domain.page import Page
-
+from app.utils.logger import logger
 
 class QuestionSegmenter:
 
     def _build_question(
             self,
             page,
+            metadata,
             section,
             question_number,
             sub_question,
@@ -25,11 +26,11 @@ class QuestionSegmenter:
 
             student_class="10",
 
-            subject="Mathematics",
+            subject=metadata["subject"],
 
-            year=2024,
+            year=metadata["year"],
 
-            exam_type="Annual",
+            exam_type=metadata["exam_type"],
 
             section=section,
 
@@ -61,10 +62,13 @@ class QuestionSegmenter:
         )
 
     def segment(self, pages: List[Page]):
+        parser = FilenameParser()
 
         all_questions = []
 
         for page in pages:
+
+            metadata = parser.parse(page.source_file)
 
             section = self._find_section(page.text)
 
@@ -79,6 +83,7 @@ class QuestionSegmenter:
                 for number, text in sub_questions:
                     question = self._build_question(
                         page,
+                        metadata,
                         section,
                         main_question,
                         number,
@@ -86,6 +91,7 @@ class QuestionSegmenter:
                     )
 
                     all_questions.append(question)
+        logger.info(f"Extracted {len(all_questions)} questions")
 
         return all_questions
 

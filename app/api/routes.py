@@ -6,12 +6,21 @@ from app.similarity.vectorizer import QuestionVectorizer
 from app.similarity.similarity_engine import SimilarityEngine
 from fastapi import UploadFile, File
 from pathlib import Path
+from fastapi import Query
+from app.schemas.stats_schema import StatsSchema
+from app.schemas.upload_response_schema import UploadResponseSchema
+from app.schemas.question_schema import QuestionSchema
+from app.services.question_service import QuestionService
+from app.utils.logger import logger
 import shutil
 router = APIRouter()
 
 
 @router.get("/")
 def home():
+
+    logger.info("Home endpoint accessed")
+
     return {
         "message": "Past Paper AI Backend Running"
     }
@@ -19,33 +28,71 @@ def home():
 
 @router.get("/health")
 def health():
+
+    logger.info("Health endpoint checked")
+
     return {
         "status": "OK"
     }
 
-@router.get("/questions")
+@router.get(
+    "/questions",
+    response_model=list[QuestionSchema],
+    tags=["Questions"],
+    summary="Get all extracted questions",
+    description="Returns all extracted questions."
+)
 def get_questions():
+    service = QuestionService()
 
-    reader = PDFReader()
-
-    pages = reader.read(
-        RAW_DATA_DIR / "Math_2024_Annual_Text.pdf"
-    )
-
-    segmenter = QuestionSegmenter()
-
-    questions = segmenter.segment(pages)
+    questions = service.get_questions()
+    logger.info(f"Returned {len(questions)} questions")
 
     return questions
 
-@router.get("/question/{question_number}")
+@router.get(
+    "/search",
+    tags=["Questions"],
+    summary="Search questions by keyword"
+)
+def search_questions(keyword: str = Query(..., description="Keyword to search")):
+    service = QuestionService()
+
+    questions = service.get_questions()
+    logger.info(f"Searching for keyword: {keyword}")
+
+    results = []
+
+    keyword = keyword.lower()
+
+    for question in questions:
+
+        search_text = f"""
+        {question.question_text}
+        {question.subject}
+        {question.chapter}
+        {question.topic}
+        {question.question_type}
+        """
+
+        if keyword.lower() in search_text.lower():
+
+            results.append(question)
+    logger.info(f"Found {len(results)} matching questions")
+
+    return results
+
+@router.get(
+    "/question/{question_number}",
+    response_model=QuestionSchema,
+    tags=["Questions"],
+    summary="Get a single question",
+    description="Returns a question using its main question number."
+)
 def get_question(question_number: int):
+    service = QuestionService()
 
-    reader = PDFReader()
-    pages = reader.read(RAW_DATA_DIR / "Math_2024_Annual_Text.pdf")
-
-    segmenter = QuestionSegmenter()
-    questions = segmenter.segment(pages)
+    questions = service.get_questions()
 
     for question in questions:
         if question.question_number == question_number:
@@ -53,16 +100,16 @@ def get_question(question_number: int):
 
     return {"error": "Question not found"}
 
-@router.get("/similar/{question_number}")
+@router.get(
+    "/similar/{question_number}",
+    tags=["AI"],
+    summary="Find similar questions",
+    description="Returns questions that are similar using TF-IDF and cosine similarity."
+)
 def get_similar_questions(question_number: int):
+    service = QuestionService()
 
-    reader = PDFReader()
-    pages = reader.read(
-        RAW_DATA_DIR / "Math_2024_Annual_Text.pdf"
-    )
-
-    segmenter = QuestionSegmenter()
-    questions = segmenter.segment(pages)
+    questions = service.get_questions()
 
     # Find the index of the requested question
     question_index = None
@@ -92,10 +139,18 @@ def get_similar_questions(question_number: int):
             "similarity": round(float(score), 2),
             "question_text": questions[index].question_text
         })
-
+    logger.info(
+        f"Found {len(results)} similar questions for Question {question_number}"
+    )
     return results
 
-@router.post("/upload")
+@router.post(
+    "/upload",
+    response_model=UploadResponseSchema,
+    tags=["Upload"],
+    summary="Upload a PDF",
+    description="Uploads a PDF into the raw data directory."
+)
 def upload_pdf(file: UploadFile = File(...)):
 
     upload_dir = RAW_DATA_DIR
@@ -106,7 +161,92 @@ def upload_pdf(file: UploadFile = File(...)):
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
+        service = QuestionService()
+
+        questions = service.get_questions()
+
+        reader = PDFReader()
+
+        pages = reader.read(file_path)
+    logger.info(f"Uploaded PDF: {file.filename}")
+
     return {
         "message": "PDF uploaded successfully",
-        "filename": file.filename
+        "filename": file.filename,
+        "pages": len(pages),
+        "questions_found": len(questions),
+        "ocr_used": any(page.needs_ocr for page in pages)
     }
+
+@router.get(
+    "/stats",
+    response_model=StatsSchema,
+    tags=["Analytics"],
+    summary="Project Statistics",
+    description="Returns statistics about the extracted questions."
+)
+def get_statistics():
+    service = QuestionService()
+
+    questions = service.get_questions()
+
+    stats = {
+
+        "total_questions": len(questions),
+
+        "short_questions":
+            sum(
+                1
+                for q in questions
+                if q.question_type == "Short Question"
+            ),
+
+        "long_questions":
+            sum(
+                1
+                for q in questions
+                if q.question_type == "Long Question"
+            ),
+
+        "subjects":
+            sorted(
+                list(
+                    {
+                        q.subject
+                        for q in questions
+                    }
+                )
+            ),
+
+        "years":
+            sorted(
+                list(
+                    {
+                        q.year
+                        for q in questions
+                    }
+                )
+            ),
+
+        "exam_types":
+            sorted(
+                list(
+                    {
+                        q.exam_type
+                        for q in questions
+                    }
+                )
+            ),
+
+        "sections": {}
+    }
+
+    for question in questions:
+
+        section = question.section
+
+        stats["sections"][section] = (
+            stats["sections"].get(section, 0) + 1
+        )
+    logger.info("Statistics generated successfully")
+    return stats
