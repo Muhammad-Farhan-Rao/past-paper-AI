@@ -8,10 +8,10 @@ from fastapi import UploadFile, File
 from pathlib import Path
 from fastapi import Query
 from typing import Optional
+from app.services.service_container import question_service
 from app.schemas.stats_schema import StatsSchema
 from app.schemas.upload_response_schema import UploadResponseSchema
 from app.schemas.question_schema import QuestionSchema
-from app.services.question_service import QuestionService
 from app.utils.logger import logger
 import shutil
 router = APIRouter()
@@ -46,12 +46,12 @@ def health():
 
 def get_questions(pdf: Optional[str] = None):
 
-    service = QuestionService()
+    questions = (
+        question_service.get_questions(RAW_DATA_DIR / pdf)
+        if pdf
+        else question_service.get_questions()
+    )
 
-    if pdf:
-        return service.get_questions(RAW_DATA_DIR / pdf)
-
-    return service.get_questions()
     logger.info(f"Returned {len(questions)} questions")
 
     return questions
@@ -65,12 +65,11 @@ def search_questions(
     keyword: str = Query(..., description="Keyword to search"),
     pdf: Optional[str] = None
 ):
-    service = QuestionService()
 
     questions = (
-        service.get_questions(RAW_DATA_DIR / pdf)
+        question_service.get_questions(RAW_DATA_DIR / pdf)
         if pdf
-        else service.get_questions()
+        else question_service.get_questions()
     )
     logger.info(f"Searching for keyword: {keyword}")
 
@@ -106,12 +105,11 @@ def get_question(
     question_number: int,
     pdf: Optional[str] = None
 ):
-    service = QuestionService()
 
     questions = (
-        service.get_questions(RAW_DATA_DIR / pdf)
+        question_service.get_questions(RAW_DATA_DIR / pdf)
         if pdf
-        else service.get_questions()
+        else question_service.get_questions()
     )
 
     for question in questions:
@@ -130,12 +128,11 @@ def get_similar_questions(
     question_number: int,
     pdf: Optional[str] = None
 ):
-    service = QuestionService()
 
     questions = (
-        service.get_questions(RAW_DATA_DIR / pdf)
+        question_service.get_questions(RAW_DATA_DIR / pdf)
         if pdf
-        else service.get_questions()
+        else question_service.get_questions()
     )
 
     # Find the index of the requested question
@@ -188,13 +185,11 @@ def upload_pdf(file: UploadFile = File(...)):
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-        service = QuestionService()
+    questions = question_service.get_questions(file_path)
 
-        questions = service.get_questions()
+    reader = PDFReader()
 
-        reader = PDFReader()
-
-        pages = reader.read(file_path)
+    pages = reader.read(file_path)
     logger.info(f"Uploaded PDF: {file.filename}")
 
     return {
@@ -213,12 +208,11 @@ def upload_pdf(file: UploadFile = File(...)):
     description="Returns statistics about the extracted questions."
 )
 def get_statistics(pdf: Optional[str] = None):
-    service = QuestionService()
 
     questions = (
-        service.get_questions(RAW_DATA_DIR / pdf)
+        question_service.get_questions(RAW_DATA_DIR / pdf)
         if pdf
-        else service.get_questions()
+        else question_service.get_questions()
     )
 
     stats = {
