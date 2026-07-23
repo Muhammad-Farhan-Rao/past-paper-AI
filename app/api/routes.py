@@ -7,6 +7,7 @@ from app.similarity.similarity_engine import SimilarityEngine
 from fastapi import UploadFile, File
 from pathlib import Path
 from fastapi import Query
+from typing import Optional
 from app.schemas.stats_schema import StatsSchema
 from app.schemas.upload_response_schema import UploadResponseSchema
 from app.schemas.question_schema import QuestionSchema
@@ -42,10 +43,15 @@ def health():
     summary="Get all extracted questions",
     description="Returns all extracted questions."
 )
-def get_questions():
+
+def get_questions(pdf: Optional[str] = None):
+
     service = QuestionService()
 
-    questions = service.get_questions()
+    if pdf:
+        return service.get_questions(RAW_DATA_DIR / pdf)
+
+    return service.get_questions()
     logger.info(f"Returned {len(questions)} questions")
 
     return questions
@@ -55,10 +61,17 @@ def get_questions():
     tags=["Questions"],
     summary="Search questions by keyword"
 )
-def search_questions(keyword: str = Query(..., description="Keyword to search")):
+def search_questions(
+    keyword: str = Query(..., description="Keyword to search"),
+    pdf: Optional[str] = None
+):
     service = QuestionService()
 
-    questions = service.get_questions()
+    questions = (
+        service.get_questions(RAW_DATA_DIR / pdf)
+        if pdf
+        else service.get_questions()
+    )
     logger.info(f"Searching for keyword: {keyword}")
 
     results = []
@@ -89,10 +102,17 @@ def search_questions(keyword: str = Query(..., description="Keyword to search"))
     summary="Get a single question",
     description="Returns a question using its main question number."
 )
-def get_question(question_number: int):
+def get_question(
+    question_number: int,
+    pdf: Optional[str] = None
+):
     service = QuestionService()
 
-    questions = service.get_questions()
+    questions = (
+        service.get_questions(RAW_DATA_DIR / pdf)
+        if pdf
+        else service.get_questions()
+    )
 
     for question in questions:
         if question.question_number == question_number:
@@ -106,10 +126,17 @@ def get_question(question_number: int):
     summary="Find similar questions",
     description="Returns questions that are similar using TF-IDF and cosine similarity."
 )
-def get_similar_questions(question_number: int):
+def get_similar_questions(
+    question_number: int,
+    pdf: Optional[str] = None
+):
     service = QuestionService()
 
-    questions = service.get_questions()
+    questions = (
+        service.get_questions(RAW_DATA_DIR / pdf)
+        if pdf
+        else service.get_questions()
+    )
 
     # Find the index of the requested question
     question_index = None
@@ -185,10 +212,14 @@ def upload_pdf(file: UploadFile = File(...)):
     summary="Project Statistics",
     description="Returns statistics about the extracted questions."
 )
-def get_statistics():
+def get_statistics(pdf: Optional[str] = None):
     service = QuestionService()
 
-    questions = service.get_questions()
+    questions = (
+        service.get_questions(RAW_DATA_DIR / pdf)
+        if pdf
+        else service.get_questions()
+    )
 
     stats = {
 
