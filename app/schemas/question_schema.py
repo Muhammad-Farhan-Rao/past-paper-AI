@@ -1,36 +1,85 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 
 class QuestionSchema(BaseModel):
 
-    id: str
+    id: str = Field(
+        example="8719b619-5a01-4d05-a461-979360cf0988"
+    )
 
-    board: str
-    student_class: str
-    subject: str
-    year: int
-    exam_type: str
+    board: str = Field(
+        example="BISE Lahore"
+    )
 
-    section: str
+    student_class: str = Field(
+        example="10"
+    )
 
-    question_number: int
-    sub_question_number: Optional[str]
+    subject: str = Field(
+        example="Mathematics"
+    )
 
-    question_text: str
+    year: int = Field(
+        example=2024
+    )
 
-    marks: Optional[int]
+    exam_type: str = Field(
+        example="Annual"
+    )
 
-    question_type: str
+    section: str = Field(
+        example="PART-I"
+    )
 
-    chapter: Optional[str]
-    topic: Optional[str]
-    subtopic: Optional[str]
+    question_number: int = Field(
+        example=2
+    )
 
-    page_number: int
-    source_file: str
+    sub_question_number: Optional[str] = Field(
+        example="iii"
+    )
 
-    extraction_confidence: float
-    classification_confidence: float
+    question_text: str = Field(
+        example="Solve by factorization: x² - x - 20 = 0"
+    )
 
-    review_status: str
+    marks: Optional[int] = Field(
+        example=2
+    )
+
+    question_type: str = Field(
+        example="Short Question"
+    )
+
+    chapter: Optional[str] = Field(
+        example="Quadratic Equations"
+    )
+
+    topic: Optional[str] = Field(
+        example="Factorization"
+    )
+
+    subtopic: Optional[str] = Field(
+        example=None
+    )
+
+    page_number: int = Field(
+        example=1
+    )
+
+    source_file: str = Field(
+        example="Math_2024_Annual_Text.pdf"
+    )
+
+    extraction_confidence: float = Field(
+        example=1.0
+    )
+
+    classification_confidence: float = Field(
+        example=0.95
+    )
+
+    review_status: str = Field(
+        example="pending"
+    )

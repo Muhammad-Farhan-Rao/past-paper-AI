@@ -1,14 +1,24 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class UploadResponseSchema(BaseModel):
 
-    message: str
+    message: str = Field(
+        example="PDF uploaded successfully"
+    )
 
-    filename: str
+    filename: str = Field(
+        example="Math_2024_Annual.pdf"
+    )
 
-    pages: int
+    pages: int = Field(
+        example=2
+    )
 
-    questions_found: int
+    questions_found: int = Field(
+        example=34
+    )
 
-    ocr_used: bool
+    ocr_used: bool = Field(
+        example=False
+    )
